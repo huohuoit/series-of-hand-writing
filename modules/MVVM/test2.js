@@ -12,10 +12,11 @@ function Mvvm (options = {}) {  // ES6传值优化处理 赋初始值options = {
     };
 
     // 数据劫持
-    var dep = Observe(data);
+    let dep = Observe(data);
 
     // 初始化computed,将this指向实例
-    // initComputed.call(this);
+    initComputed.call(this);
+
     // 编译    
     new Compile(options.el, this);
     if (typeof options.mounted != 'undefined') {
@@ -46,16 +47,16 @@ Mvvm.prototype._proxy = function (key) {
 
 function initComputed () {
     let vm = this;
-    let computed = this.$options.computed;  // 从options上拿到computed属性   {sum: ƒ, noop: ƒ}
+    let computed = this.$options.computed;  // 从options上拿到computed属性   {sum: ƒ}
     if (typeof computed != 'undefined') {
         // 得到的都是对象的key可以通过Object.keys转化为数组
-        Object.keys(computed).forEach(key => {  // key就是sum,noop
+        Object.keys(computed).forEach(key => {  // key 就是 sum
             Object.defineProperty(vm, key, {
                 // 这里判断是computed里的key是对象还是函数
-                // 如果是函数直接就会调get方法
-                // 如果是对象的话，手动调一下get方法即可
+                //      函数：会自动调get方法
+                //      对象：需手动调一下get方法
                 // 如： sum() {return this.a + this.b;},他们获取a和b的值就会调用get方法
-                // 所以不需要new Watcher去监听变化了
+                // 不需要new Watcher去监听变化了
                 get: typeof computed[key] === 'function' ? computed[key] : computed[key].get,
                 set () { }
             });
@@ -100,19 +101,6 @@ function observeAssist (data) {
     return new Observe(data);
 }
 
-// 此时可以监听到每个数据的变化了 =》发布通知给订阅者
-// 发布订阅模式：把要执行的函数统一存储在一个数组中管理，当达到某个执行条件时，循环这个数组并执行每一个成员
-function Dep () {
-    // 创建一个存放函数事件的数组
-    this.subs = [];
-};
-Dep.prototype.addSub = function (sub) {
-    this.subs.push(sub);
-};
-Dep.prototype.notify = function () {
-    this.subs.forEach(sub => sub.update());  // 通过Watcher这个类创建的实例，都拥有update方法
-};
-
 // 数据劫持和数据代理实现后，开始编译
 // 创建 Compile 构造函数
 function Compile (el, vm) {
@@ -131,14 +119,16 @@ function Compile (el, vm) {
         Array.from(frag.childNodes).forEach(node => {
             let txt = node.textContent;
             let reg = /\{\{(.*?)\}\}/g;  // 正则匹配{{}}
-
-            if (node.nodeType === 3 && reg.test(txt)) {  // 即是文本节点又有大括号的情况{{}}
+            // 节点类型 node.nodeType：
+            //      值为 1：元素节点（<p>、<div>等）    
+            //      值为 3：Element 或者 Attr 中实际的  text（文本）
+            if (node.nodeType === 3 && reg.test(txt)) {  // 即是 文本节点 又有 大括号{{}} 的情况
                 function replaceTxt () {
                     node.textContent = txt.replace(reg, (matched, placeholder) => {
-                        console.log(placeholder);   // 匹配到的分组 如：song, album.name, singer...
+                        console.log('placeholder', placeholder);   // 匹配到的分组 word
                         vm.initMounted || new Watcher(vm, placeholder, replaceTxt);   // 监听变化，进行匹配替换内容
-
-                        return placeholder.split('.').reduce((val, key) => {
+                        // 将String对象（placeholder）分割成子字符串数组
+                        return placeholder.split('.').reduce((val, key) => {  // 用 reduce 为数组每个元素依次执行一次回调函数
                             return val[key];
                         }, vm);
                     });
@@ -147,13 +137,14 @@ function Compile (el, vm) {
                 replaceTxt();
             }
 
+            // 双向数据绑定
             if (node.nodeType === 1) {  // 元素节点
-                let nodeAttr = node.attributes; // 获取dom上的所有属性,是个类数组
+                let nodeAttr = node.attributes; // 获取dom上的所有属性，是个类数组
                 Array.from(nodeAttr).forEach(attr => {
                     let name = attr.name;   // v-model  type
-                    let exp = attr.value;   // c        text
+                    let exp = attr.value;   // word     text
                     if (name.includes('v-')) {
-                        node.value = vm[exp];   // this.c 为 2
+                        node.value = vm[exp];   // this.word 为 'Hello World!'
                     }
                     // 监听变化
                     new Watcher(vm, exp, function (newVal) {
@@ -162,8 +153,8 @@ function Compile (el, vm) {
 
                     node.addEventListener('input', e => {
                         let newVal = e.target.value;
-                        // 相当于给this.c赋了一个新值
-                        // 而值的改变会调用set，set中又会调用notify，notify中调用watcher的update方法实现了更新
+                        // 相当于给 this.word 赋了一个新值
+                        // 而值的改变会调用 set，set 中又会调用 notify，notify 中调用 watcher 的 update 方法实现了更新
                         vm[exp] = newVal;
                     });
                 });
@@ -181,6 +172,19 @@ function Compile (el, vm) {
     // 再将文档片段放入 el
     vm.$el.appendChild(fragment);
 }
+
+// 此时可以监听到每个数据的变化了 =》发布通知给订阅者
+// 发布订阅模式：把要执行的函数统一存储在一个数组中管理，当达到某个执行条件时，循环这个数组并执行每一个成员
+function Dep () {
+    // 创建一个存放函数事件的数组
+    this.subs = [];
+};
+Dep.prototype.addSub = function (sub) {
+    this.subs.push(sub);
+};
+Dep.prototype.notify = function () {
+    this.subs.forEach(sub => sub.update());  // 通过Watcher这个类创建的实例，都拥有update方法
+};
 
 // 监听函数  
 function Watcher (vm, exp, fn) {

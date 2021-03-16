@@ -22,7 +22,7 @@ function Compile (el, vm) {
             if (node.nodeType === 3 && reg.test(txt)) {  // 即是 文本节点 又有 大括号{{}} 的情况
                 function replaceTxt () {
                     node.textContent = txt.replace(reg, (matched, placeholder) => {
-                        console.log('placeholder', placeholder);   // 匹配到的分组 word
+                        // console.log('placeholder', placeholder);   // 匹配到的分组 word
                         vm.initMounted || new Watcher(vm, placeholder, replaceTxt);   // 监听变化，进行匹配替换内容
                         // 将String对象（placeholder）分割成子字符串数组
                         return placeholder.split('.').reduce((val, key) => {  // 用 reduce 为数组每个元素依次执行一次回调函数

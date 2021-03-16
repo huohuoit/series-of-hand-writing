@@ -14,6 +14,9 @@ function Mvvm (options = {}) {  // ES6传值优化处理 赋初始值options = {
     // 数据劫持
      var dep = Observe(data);
 
+    // 初始化computed,将this指向实例
+    initComputed.call(this);
+
     // 编译
     new Compile(options.el, this);
 
@@ -43,16 +46,16 @@ Mvvm.prototype._proxy = function (key) {
 
 function initComputed () {
     let vm = this;
-    let computed = this.$options.computed;  // 从options上拿到computed属性   {sum: ƒ, noop: ƒ}
+    let computed = this.$options.computed;  // 从options上拿到computed属性   {sum: ƒ}
     if (typeof computed != 'undefined') {
         // 得到的都是对象的key可以通过Object.keys转化为数组
-        Object.keys(computed).forEach(key => {  // key就是sum,noop
+        Object.keys(computed).forEach(key => {  // key 就是 sum
             Object.defineProperty(vm, key, {
                 // 这里判断是computed里的key是对象还是函数
-                // 如果是函数直接就会调get方法
-                // 如果是对象的话，手动调一下get方法即可
+                //      函数：会自动调get方法
+                //      对象：需手动调一下get方法
                 // 如： sum() {return this.a + this.b;},他们获取a和b的值就会调用get方法
-                // 所以不需要new Watcher去监听变化了
+                // 不需要new Watcher去监听变化了
                 get: typeof computed[key] === 'function' ? computed[key] : computed[key].get,
                 set () { }
             });

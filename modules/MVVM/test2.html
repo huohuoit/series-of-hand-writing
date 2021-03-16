@@ -13,19 +13,20 @@
         <input type="text" v-model="word">
         <p>{{word}}</p>
         <p>{{sum}}</p>
-        <button :click='doClick'>try it!</button>
+        <button v-click='doClick'>try it!</button>
     </div>
     <!-- <script src="./blockJS/compile.js"></script>
     <script src="./blockJS/mvvm.js"></script>
     <script src="./blockJS/observe.js"></script>
     <script src="./blockJS/watcher.js"></script> -->
-    <script src="./my.js"></script>
+    <script src="./test2.js"></script>
     <script>
         let vm = new Mvvm({
             el: '#app',
             data: {
                 word: 'Hello World!',
-                tip: 'huohuoit'
+                a: 1,
+                b: 2,
             },
             methods: {
                 doClick() {
@@ -33,9 +34,9 @@
                 }
             },
             // 再增加一下 computed 和 mounted
-            computed: { // 还有点问题！！！
+            computed: {
                 sum() {
-                    this.word + this.tip;
+                    return this.a + this.b;
                 }
             },
             mounted() {
