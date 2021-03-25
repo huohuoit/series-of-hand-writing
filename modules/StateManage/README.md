@@ -16,3 +16,4 @@ Either clone this repository or grab a [ZIP archive](https://github.com/hankchiz
 
 huohuoit add:
 参考博客：https://juejin.cn/post/6844903660804112391
+注：正常启动项目，可以在 vscode 中安装 live serve 插件启动服务
