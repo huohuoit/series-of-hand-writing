@@ -10,16 +10,25 @@
 
 <body>
     <script>
-        var vm = 0;
-        var a = [1, 2, 3, 4];
-        var b = 'aa'.split('.').reduce((val,key) => {
-            console.log(val, val[key]);
-            return val[key];
-        },vm)
-        // var b = a.split('.').reduce((val, key) => {
-        //     return val[key];
-        // }, vm);
-        console.log(b);
+        function myInherit(child, parent) { // 接受两个参数：父子构造函数
+            let prototype = Object.create(parent.prototype) // 创建父类原型的拷贝
+            prototype.constructor = child // 解决重写原型导致的 constructor 丢失问题（增强对象）
+            child.prototype = prototype // 将新对象赋值给子类原型
+        }
+
+        // 测试
+        function Parent(name) {
+            this.name = name
+        }
+        Parent.prototype.getName = function () {
+            return this.name
+        }
+        function Child() {
+            Parent.call(this, 'huohuo')
+        }
+        myInherit(Child, Parent)
+        const child1 = new Child()
+        console.log(child1.name);
     </script>
 </body>
 
